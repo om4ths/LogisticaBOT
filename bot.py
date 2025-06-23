@@ -7,14 +7,22 @@ from discord import app_commands
 from discord.ext import commands, tasks
 
 print ("o bot está funcionando")
-print("Token:", os.getenv("TOKEN"))
 
 TOKEN = os.getenv("TOKEN")
 GUILD_ID = os.getenv("GUILD_ID")
+
+if not TOKEN:
+    print("❌ ERRO: TOKEN não encontrado nas variáveis de ambiente!")
+    print("Por favor, adicione seu token do Discord bot nas Secrets.")
+    exit(1)
+
+print("Token configurado:", "✅" if TOKEN else "❌")
+
 CANAL_ID_HOSPEDAGEM = int("1386760995627602103")
 CANAL_ID_LOGS = int("1386763639373041675")
 
 intents = discord.Intents.default()
+intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 recursos = {
@@ -43,45 +51,63 @@ class MenuConexao(discord.ui.View):
         ]
     )
     async def select_callback(self, select, interaction):
-        recurso = select.values[0]
-        usuario = interaction.user
+        try:
+            recurso = select.values[0]
+            usuario = interaction.user
 
-        if recursos[recurso] is None:
-            recursos[recurso] = usuario
-            await interaction.response.send_message(f"🔌 Você se conectou ao **{recurso}**.", ephemeral=True)
-            await logar(f"{usuario.mention} conectou ao **{recurso}**")
-            iniciar_timer(recurso)
-        elif recursos[recurso] == usuario:
-            recursos[recurso] = None
-            await interaction.response.send_message(f"❌ Você se desconectou do **{recurso}**.", ephemeral=True)
-            await logar(f"{usuario.mention} desconectou do **{recurso}**")
-            cancelar_timer(recurso)
-        else:
-            # This means recursos[recurso] is not None and not the current user
-            await interaction.response.send_message(f"🚫 O **{recurso}** já está em uso por {recursos[recurso].mention}.", ephemeral=True)
+            if recursos[recurso] is None:
+                recursos[recurso] = usuario
+                await interaction.response.send_message(f"🔌 Você se conectou ao **{recurso}**.", ephemeral=True)
+                await logar(f"{usuario.mention} conectou ao **{recurso}**")
+                iniciar_timer(recurso)
+            elif recursos[recurso] == usuario:
+                recursos[recurso] = None
+                await interaction.response.send_message(f"❌ Você se desconectou do **{recurso}**.", ephemeral=True)
+                await logar(f"{usuario.mention} desconectou do **{recurso}**")
+                cancelar_timer(recurso)
+            else:
+                # This means recursos[recurso] is not None and not the current user
+                if recursos[recurso] and hasattr(recursos[recurso], 'mention'):
+                    await interaction.response.send_message(f"🚫 O **{recurso}** já está em uso por {recursos[recurso].mention}.", ephemeral=True)
+                else:
+                    await interaction.response.send_message(f"🚫 O **{recurso}** já está em uso.", ephemeral=True)
 
-
-        await atualizar_status()
+            await atualizar_status()
+        except Exception as e:
+            print(f"❌ Erro no select_callback: {e}")
+            if not interaction.response.is_done():
+                await interaction.response.send_message("❌ Ocorreu um erro. Tente novamente.", ephemeral=True)
 
 async def atualizar_status():
-    canal = bot.get_channel(CANAL_ID_HOSPEDAGEM)
-    msg_id = await buscar_msg_fixa(canal)
-    conteudo = "**💻 Status das Conexões:**\n\n"
+    try:
+        canal = bot.get_channel(CANAL_ID_HOSPEDAGEM)
+        if not canal:
+            print(f"❌ Canal de hospedagem não encontrado: {CANAL_ID_HOSPEDAGEM}")
+            return
+            
+        msg_id = await buscar_msg_fixa(canal)
+        conteudo = "**💻 Status das Conexões:**\n\n"
 
-    for nome, usuario in recursos.items():
-        if usuario:
-            conteudo += f"{nome}: 🔴 Em uso por {usuario.mention}\n"
+        for nome, usuario in recursos.items():
+            if usuario and hasattr(usuario, 'mention'):
+                conteudo += f"{nome}: 🔴 Em uso por {usuario.mention}\n"
+            else:
+                conteudo += f"{nome}: ✅ Disponível\n"
+
+        view = MenuConexao()
+
+        if msg_id:
+            try:
+                msg = await canal.fetch_message(msg_id)
+                await msg.edit(content=conteudo, view=view)
+            except discord.NotFound:
+                nova_msg = await canal.send(content=conteudo, view=view)
+                await nova_msg.pin()
         else:
-            conteudo += f"{nome}: ✅ Disponível\n"
-
-    view = MenuConexao()
-
-    if msg_id:
-        msg = await canal.fetch_message(msg_id)
-        await msg.edit(content=conteudo, view=view)
-    else:
-        nova_msg = await canal.send(content=conteudo, view=view)
-        await nova_msg.pin()
+            nova_msg = await canal.send(content=conteudo, view=view)
+            await nova_msg.pin()
+    except Exception as e:
+        print(f"❌ Erro ao atualizar status: {e}")
 
 async def buscar_msg_fixa(canal):
     pins = await canal.pins()
@@ -91,13 +117,21 @@ async def buscar_msg_fixa(canal):
     return None
 
 async def logar(mensagem):
-    canal = bot.get_channel(CANAL_ID_LOGS)
-    await canal.send(f"[{datetime.now().strftime('%H:%M:%S')}] {mensagem}")
+    try:
+        canal = bot.get_channel(CANAL_ID_LOGS)
+        if canal:
+            await canal.send(f"[{datetime.now().strftime('%H:%M:%S')}] {mensagem}")
+        else:
+            print(f"❌ Canal de logs não encontrado: {CANAL_ID_LOGS}")
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] {mensagem}")
+    except Exception as e:
+        print(f"❌ Erro ao enviar log: {e}")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] {mensagem}")
 
 def iniciar_timer(recurso):
     async def desconectar():
         await asyncio.sleep(14400)  # 4 horas = 14400 segundos
-        if recursos[recurso]:
+        if recursos[recurso] and hasattr(recursos[recurso], 'mention'):
             await logar(f"⏱ Tempo expirado: {recursos[recurso].mention} foi desconectado de **{recurso}**.")
             recursos[recurso] = None
             await atualizar_status()
