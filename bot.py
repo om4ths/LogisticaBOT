@@ -50,7 +50,7 @@ class MenuConexao(discord.ui.View):
             for nome in recursos
         ]
     )
-    async def select_callback(self, select, interaction):
+    async def select_callback(self, interaction, select):
         try:
             recurso = select.values[0]
             usuario = interaction.user
