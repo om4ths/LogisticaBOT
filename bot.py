@@ -18,8 +18,8 @@ if not TOKEN:
 
 print("Token configurado:", "✅" if TOKEN else "❌")
 
-CANAL_ID_HOSPEDAGEM = int("1386760995627602103")
-CANAL_ID_LOGS = int("1386763639373041675")
+CANAL_ID_HOSPEDAGEM = int("1386760046456868925")
+CANAL_ID_LOGS = int("1386793302623391814")
 
 intents = discord.Intents.default()
 intents.message_content = True
