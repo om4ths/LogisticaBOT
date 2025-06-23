@@ -49,18 +49,36 @@ class BotaoDesconectar(discord.ui.View):
         try:
             usuario = interaction.user
             if recursos[self.recurso] == usuario:
+                # Responder ANTES de deletar o canal
+                await interaction.response.send_message("❌ Desconectado com sucesso!", ephemeral=True)
+                
                 recursos[self.recurso] = None
                 cancelar_timer(self.recurso)
                 await logar(f"{usuario.mention} desconectou do **{self.recurso}** via botão")
                 await atualizar_status()
                 await deletar_canal_temporario(usuario, self.recurso)
-                await interaction.response.send_message("❌ Desconectado com sucesso!", ephemeral=True)
             else:
                 await interaction.response.send_message("🚫 Você não está conectado a este recurso.", ephemeral=True)
+        except discord.errors.NotFound:
+            # Se a interação já expirou ou o canal foi deletado, apenas fazer o cleanup
+            print("⚠️ Interação expirada, fazendo cleanup silencioso")
+            if recursos[self.recurso] == usuario:
+                recursos[self.recurso] = None
+                cancelar_timer(self.recurso)
+                await logar(f"{usuario.mention} desconectou do **{self.recurso}** via botão (cleanup)")
+                await atualizar_status()
+                await deletar_canal_temporario(usuario, self.recurso)
         except Exception as e:
             print(f"❌ Erro ao desconectar via botão: {e}")
-            if not interaction.response.is_done():
-                await interaction.response.send_message("❌ Erro ao desconectar.", ephemeral=True)
+            try:
+                if not interaction.response.is_done():
+                    await interaction.response.send_message("❌ Erro ao desconectar.", ephemeral=True)
+            except:
+                # Se não conseguir responder, pelo menos fazer o cleanup
+                if recursos[self.recurso] == usuario:
+                    recursos[self.recurso] = None
+                    cancelar_timer(self.recurso)
+                    await deletar_canal_temporario(usuario, self.recurso)
 
 class MenuConexao(discord.ui.View):
     def __init__(self):
