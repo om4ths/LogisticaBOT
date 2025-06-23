@@ -191,27 +191,27 @@ def cancelar_timer(recurso):
 
 async def criar_canal_temporario(usuario, recurso):
     try:
-        guild = bot.guilds[0]  # Assumindo que o bot está em apenas um servidor
+        # Pegar o canal de hospedagem
+        canal_hospedagem = bot.get_channel(CANAL_ID_HOSPEDAGEM)
+        if not canal_hospedagem:
+            print(f"❌ Canal de hospedagem não encontrado: {CANAL_ID_HOSPEDAGEM}")
+            return
         
-        # Criar overwrites para que apenas o usuário e o bot vejam o canal
-        overwrites = {
-            guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            usuario: discord.PermissionOverwrite(read_messages=True, send_messages=True),
-            guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
-        }
+        # Nome da thread temporária
+        nome_thread = f"🔌 {usuario.display_name} - {recurso}"
         
-        # Nome do canal temporário
-        nome_canal = f"conexao-{usuario.name}-{recurso.replace(' ', '-').lower()}"
-        
-        # Criar o canal
-        canal = await guild.create_text_channel(
-            name=nome_canal,
-            overwrites=overwrites,
-            topic=f"Canal temporário para conexão de {usuario.display_name} ao {recurso}"
+        # Criar thread privada no canal de hospedagem
+        thread = await canal_hospedagem.create_thread(
+            name=nome_thread,
+            type=discord.ChannelType.private_thread,
+            reason=f"Conexão temporária de {usuario.display_name} ao {recurso}"
         )
         
-        # Salvar referência do canal
-        canais_temporarios[(usuario.id, recurso)] = canal.id
+        # Adicionar o usuário à thread
+        await thread.add_user(usuario)
+        
+        # Salvar referência da thread
+        canais_temporarios[(usuario.id, recurso)] = thread.id
         
         # Enviar mensagem de boas-vindas com botão de desconectar
         embed = discord.Embed(
@@ -231,29 +231,29 @@ async def criar_canal_temporario(usuario, recurso):
         )
         
         view = BotaoDesconectar(recurso)
-        await canal.send(f"Olá {usuario.mention}!", embed=embed, view=view)
+        await thread.send(f"Olá {usuario.mention}!", embed=embed, view=view)
         
-        print(f"✅ Canal temporário criado: {canal.name}")
+        print(f"✅ Thread temporária criada: {thread.name}")
         
     except Exception as e:
-        print(f"❌ Erro ao criar canal temporário: {e}")
+        print(f"❌ Erro ao criar thread temporária: {e}")
 
 async def deletar_canal_temporario(usuario, recurso):
     try:
         chave_canal = (usuario.id, recurso)
         if chave_canal in canais_temporarios:
-            canal_id = canais_temporarios[chave_canal]
-            canal = bot.get_channel(canal_id)
+            thread_id = canais_temporarios[chave_canal]
+            thread = bot.get_channel(thread_id)
             
-            if canal:
-                await canal.delete()
-                print(f"✅ Canal temporário deletado: {canal.name}")
+            if thread and isinstance(thread, discord.Thread):
+                await thread.delete()
+                print(f"✅ Thread temporária deletada: {thread.name}")
             
             # Remove da lista
             del canais_temporarios[chave_canal]
             
     except Exception as e:
-        print(f"❌ Erro ao deletar canal temporário: {e}")
+        print(f"❌ Erro ao deletar thread temporária: {e}")
 
 @bot.tree.command(name="iniciaruso")
 @app_commands.describe(recurso="Nome do recurso para se conectar")
