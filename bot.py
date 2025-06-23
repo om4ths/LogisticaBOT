@@ -28,8 +28,9 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 recursos = {
     "BR Data APP 01": None,
     "BR Data App 02": None,
-    "BR Data - Banco de Dados (SQL/Mongo)": None,
-    "BR Data - Hospedagem Compartilhada": None,
+
+    "BR Data - BD (SQL/Mongo)": None,   
+    "BR Data - Compartilhada": None,
     "Soul - App 01": None,
     "Soul - BD SQL": None,
     "Soul - BD MongoDB": None
