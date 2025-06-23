@@ -8,3 +8,15 @@ channel = "stable-23_05"
 
 [unitTest]
 language = "python3"
+
+[workflows]
+runButton = "Discord Bot"
+
+[[workflows.workflow]]
+name = "Discord Bot"
+author = 40873550
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python bot.py"
