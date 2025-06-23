@@ -57,6 +57,7 @@ class MenuConexao(discord.ui.View):
             await logar(f"{usuario.mention} desconectou do **{recurso}**")
             cancelar_timer(recurso)
         else:
+            # This means recursos[recurso] is not None and not the current user
             await interaction.response.send_message(f"🚫 O **{recurso}** já está em uso por {recursos[recurso].mention}.", ephemeral=True)
 
 
