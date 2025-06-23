@@ -37,7 +37,10 @@ class MenuConexao(discord.ui.View):
         placeholder="Selecione o servidor para se conectar",
         min_values=1,
         max_values=1,
-        options=[discord.SelectOption(label=nome, description="Clique para conectar") for nome in recursos]
+        options=[
+            discord.SelectOption(label=nome, description="Clique para conectar")
+            for nome in recursos
+        ]
     )
     async def select_callback(self, select, interaction):
         recurso = select.values[0]
