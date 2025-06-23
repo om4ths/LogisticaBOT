@@ -100,13 +100,13 @@ class MenuConexao(discord.ui.View):
 
             if recursos[recurso] is None:
                 recursos[recurso] = usuario
-                await interaction.response.send_message(f"🔌 Você se conectou ao **{recurso}**.", ephemeral=True)
+                await interaction.response.send_message(f"🔌 Você se conectou ao **{recurso}**.", ephemeral=True, delete_after=5)
                 await logar(f"{usuario.mention} conectou ao **{recurso}**")
                 iniciar_timer(recurso)
                 await criar_canal_temporario(usuario, recurso)
             elif recursos[recurso] == usuario:
                 recursos[recurso] = None
-                await interaction.response.send_message(f"❌ Você se desconectou do **{recurso}**.", ephemeral=True)
+                await interaction.response.send_message(f"❌ Você se desconectou do **{recurso}**.", ephemeral=True, delete_after=5)
                 await logar(f"{usuario.mention} desconectou do **{recurso}**")
                 cancelar_timer(recurso)
                 await deletar_canal_temporario(usuario, recurso)
