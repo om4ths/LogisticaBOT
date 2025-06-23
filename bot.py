@@ -1,3 +1,6 @@
+print ("o bot está funcionando")
+print("Token:", os.getenv("TOKEN"))
+
 import asyncio
 import os
 from datetime import datetime, timedelta
@@ -52,6 +55,7 @@ class MenuConexao(discord.ui.View):
             cancelar_timer(recurso)
         else:
             await interaction.response.send_message(f"🚫 O **{recurso}** já está em uso por {recursos[recurso].mention}.", ephemeral=True)
+
 
         await atualizar_status()
 

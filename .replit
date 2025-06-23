@@ -8,7 +8,3 @@ channel = "stable-23_05"
 
 [unitTest]
 language = "python3"
-
-[[ports]]
-localPort = 5900
-externalPort = 80
