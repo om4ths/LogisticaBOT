@@ -246,10 +246,18 @@ async def deletar_canal_temporario(usuario, recurso):
             thread = bot.get_channel(thread_id)
             
             if thread and isinstance(thread, discord.Thread):
-                await thread.delete()
-                print(f"✅ Thread temporária deletada: {thread.name}")
+                # Verificar se o bot tem permissão para deletar threads
+                if thread.guild.me.guild_permissions.manage_threads:
+                    await thread.delete()
+                    print(f"✅ Thread temporária deletada: {thread.name}")
+                else:
+                    print(f"⚠️ Sem permissão para deletar thread: {thread.name}")
+                    # Como alternativa, arquivar a thread
+                    if not thread.archived:
+                        await thread.edit(archived=True)
+                        print(f"📁 Thread arquivada: {thread.name}")
             
-            # Remove da lista
+            # Remove da lista independentemente
             del canais_temporarios[chave_canal]
             
     except Exception as e:
