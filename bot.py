@@ -37,6 +37,30 @@ recursos = {
 }
 
 timers = {}
+canais_temporarios = {}  # {(usuario_id, recurso): canal_id}
+
+class BotaoDesconectar(discord.ui.View):
+    def __init__(self, recurso):
+        super().__init__(timeout=None)
+        self.recurso = recurso
+
+    @discord.ui.button(label="🔌 Desconectar", style=discord.ButtonStyle.red)
+    async def desconectar_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        try:
+            usuario = interaction.user
+            if recursos[self.recurso] == usuario:
+                recursos[self.recurso] = None
+                cancelar_timer(self.recurso)
+                await logar(f"{usuario.mention} desconectou do **{self.recurso}** via botão")
+                await atualizar_status()
+                await deletar_canal_temporario(usuario, self.recurso)
+                await interaction.response.send_message("❌ Desconectado com sucesso!", ephemeral=True)
+            else:
+                await interaction.response.send_message("🚫 Você não está conectado a este recurso.", ephemeral=True)
+        except Exception as e:
+            print(f"❌ Erro ao desconectar via botão: {e}")
+            if not interaction.response.is_done():
+                await interaction.response.send_message("❌ Erro ao desconectar.", ephemeral=True)
 
 class MenuConexao(discord.ui.View):
     def __init__(self):
@@ -61,11 +85,13 @@ class MenuConexao(discord.ui.View):
                 await interaction.response.send_message(f"🔌 Você se conectou ao **{recurso}**.", ephemeral=True)
                 await logar(f"{usuario.mention} conectou ao **{recurso}**")
                 iniciar_timer(recurso)
+                await criar_canal_temporario(usuario, recurso)
             elif recursos[recurso] == usuario:
                 recursos[recurso] = None
                 await interaction.response.send_message(f"❌ Você se desconectou do **{recurso}**.", ephemeral=True)
                 await logar(f"{usuario.mention} desconectou do **{recurso}**")
                 cancelar_timer(recurso)
+                await deletar_canal_temporario(usuario, recurso)
             else:
                 # This means recursos[recurso] is not None and not the current user
                 if recursos[recurso] and hasattr(recursos[recurso], 'mention'):
@@ -133,7 +159,9 @@ def iniciar_timer(recurso):
     async def desconectar():
         await asyncio.sleep(14400)  # 4 horas = 14400 segundos
         if recursos[recurso] and hasattr(recursos[recurso], 'mention'):
-            await logar(f"⏱ Tempo expirado: {recursos[recurso].mention} foi desconectado de **{recurso}**.")
+            usuario = recursos[recurso]
+            await logar(f"⏱ Tempo expirado: {usuario.mention} foi desconectado de **{recurso}**.")
+            await deletar_canal_temporario(usuario, recurso)
             recursos[recurso] = None
             await atualizar_status()
     timers[recurso] = asyncio.create_task(desconectar())
@@ -142,6 +170,72 @@ def cancelar_timer(recurso):
     if recurso in timers and timers[recurso]:
         timers[recurso].cancel()
         timers[recurso] = None
+
+async def criar_canal_temporario(usuario, recurso):
+    try:
+        guild = bot.guilds[0]  # Assumindo que o bot está em apenas um servidor
+        
+        # Criar overwrites para que apenas o usuário e o bot vejam o canal
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            usuario: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+            guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
+        }
+        
+        # Nome do canal temporário
+        nome_canal = f"conexao-{usuario.name}-{recurso.replace(' ', '-').lower()}"
+        
+        # Criar o canal
+        canal = await guild.create_text_channel(
+            name=nome_canal,
+            overwrites=overwrites,
+            topic=f"Canal temporário para conexão de {usuario.display_name} ao {recurso}"
+        )
+        
+        # Salvar referência do canal
+        canais_temporarios[(usuario.id, recurso)] = canal.id
+        
+        # Enviar mensagem de boas-vindas com botão de desconectar
+        embed = discord.Embed(
+            title="🔌 Conexão Ativa",
+            description=f"Você está conectado ao **{recurso}**",
+            color=discord.Color.green()
+        )
+        embed.add_field(
+            name="⏱️ Tempo Limite", 
+            value="4 horas (desconexão automática)", 
+            inline=False
+        )
+        embed.add_field(
+            name="📝 Como Desconectar", 
+            value="• Clique no botão 🔌 Desconectar abaixo\n• Use o comando `/encerraruso`", 
+            inline=False
+        )
+        
+        view = BotaoDesconectar(recurso)
+        await canal.send(f"Olá {usuario.mention}!", embed=embed, view=view)
+        
+        print(f"✅ Canal temporário criado: {canal.name}")
+        
+    except Exception as e:
+        print(f"❌ Erro ao criar canal temporário: {e}")
+
+async def deletar_canal_temporario(usuario, recurso):
+    try:
+        chave_canal = (usuario.id, recurso)
+        if chave_canal in canais_temporarios:
+            canal_id = canais_temporarios[chave_canal]
+            canal = bot.get_channel(canal_id)
+            
+            if canal:
+                await canal.delete()
+                print(f"✅ Canal temporário deletado: {canal.name}")
+            
+            # Remove da lista
+            del canais_temporarios[chave_canal]
+            
+    except Exception as e:
+        print(f"❌ Erro ao deletar canal temporário: {e}")
 
 @bot.tree.command(name="iniciaruso")
 @app_commands.describe(recurso="Nome do recurso para se conectar")
@@ -169,6 +263,7 @@ async def encerraruso(interaction: discord.Interaction, recurso: str):
         return
     recursos[recurso] = None
     cancelar_timer(recurso)
+    await deletar_canal_temporario(interaction.user, recurso)
     await interaction.response.send_message(f"❌ Você encerrou o uso de **{recurso}**.")
     await logar(f"{interaction.user.mention} encerrou o uso de **{recurso}** via comando.")
     await atualizar_status()
