@@ -1,2 +1,5 @@
 discord.py
-flask
+Flask
+gunicorn
+dnspython
+pymongo
