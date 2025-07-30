@@ -945,30 +945,21 @@ async def on_ready():
         print(f"❌ Erro ao sincronizar comandos: {e}")
     print(f"🤖 Bot conectado como {bot.user}")
     # Inicia a tarefa de persistência do Flask
-    manter_online()
+    # REMOVIDO: manter_online() - Gunicorn gerencia o Flask no Render
 
 
 # --- Manutenção Online (Flask) ---
 from flask import Flask
-from threading import Thread
+from threading import Thread # Threading não será mais usado para manter_online
 
 app = Flask('')
 
-
 @app.route('/')
 def home():
+    # Este endpoint é usado pelo Render para health checks e pelo UptimeRobot
     return "Bot online!"
 
-
-def run():
-    app.run(host='0.0.0.0', port=8080)
-
-
-def manter_online():
-    """Inicia o servidor Flask em uma thread separada para manter o bot online."""
-    t = Thread(target=run)
-    t.start()
-
+# REMOVIDO: run() e manter_online() - Gunicorn gerencia a execução do Flask
 
 # O bot.run(TOKEN) é movido para dentro do on_ready para garantir que o Flask seja iniciado após o bot estar pronto.
 # No entanto, em ambientes como Replit, o bot.run() é o ponto de entrada principal.
