@@ -70,16 +70,17 @@ class BotaoDesconectar(discord.ui.View):
         # Deferir a resposta imediatamente para evitar "Interaction Failed"
         await interaction.response.defer(ephemeral=True) # Deferir como efêmero
 
-        usuario = interaction.user
+        usuario_interacao = interaction.user # Captura o usuário da interação
         try:
-            if recursos[self.recurso] == usuario:
+            # Ao comparar, compare o ID do usuário para robustez
+            if recursos[self.recurso] == usuario_interacao.id: # Compara com o ID armazenado
                 await logar(
-                    f"{usuario.mention} desconectou do **{self.recurso}** via botão"
+                    f"{usuario_interacao.mention} desconectou do **{self.recurso}** via botão"
                 )
                 recursos[self.recurso] = None
                 cancelar_timer(self.recurso)
                 await deletar_canal_temporario(
-                    usuario, self.recurso)  # Deleta o canal de conexão ativa
+                    usuario_interacao, self.recurso)  # Deleta o canal de conexão ativa
                 await atualizar_status()  # Atualiza o status principal
                 await verificar_fila(self.recurso
                                      )  # Verifica a fila após liberação
@@ -94,28 +95,28 @@ class BotaoDesconectar(discord.ui.View):
             print(
                 "⚠️ Interação expirada ou canal não encontrado, fazendo cleanup silencioso."
             )
-            if recursos[self.recurso] == usuario:
+            if recursos[self.recurso] == usuario_interacao.id: # Compara com o ID armazenado
                 recursos[self.recurso] = None
                 cancelar_timer(self.recurso)
                 await logar(
-                    f"{usuario.mention} desconectou do **{self.recurso}** via botão (cleanup silencioso)."
+                    f"{usuario_interacao.mention} desconectou do **{self.recurso}** via botão (cleanup silencioso)."
                 )
-                await deletar_canal_temporario(usuario, self.recurso)
+                await deletar_canal_temporario(usuario_interacao, self.recurso)
                 await atualizar_status()
                 await verificar_fila(self.recurso)
         except Exception as e:
             print(
-                f"❌ Erro ao desconectar via botão para {usuario.name} do {self.recurso}: {e}"
+                f"❌ Erro ao desconectar via botão para {usuario_interacao.name} do {self.recurso}: {e}"
             )
             if not interaction.response.is_done(): # Verifica se a resposta já foi enviada
                 await interaction.followup.send( # Usar followup.send
                     "❌ Ocorreu um erro ao desconectar. Tente novamente.",
                     ephemeral=True, delete_after=5)
             # Tentar fazer o cleanup mesmo em caso de erro
-            if recursos[self.recurso] == usuario:
+            if recursos[self.recurso] == usuario_interacao.id: # Compara com o ID armazenado
                 recursos[self.recurso] = None
                 cancelar_timer(self.recurso)
-                await deletar_canal_temporario(usuario, self.recurso)
+                await deletar_canal_temporario(usuario_interacao, self.recurso)
                 await atualizar_status()
                 await verificar_fila(self.recurso)
 
@@ -176,8 +177,8 @@ class QueueThreadView(discord.ui.View):
         # Deferir a resposta imediatamente
         await interaction.response.defer(ephemeral=True) # Deferir como efêmero
 
-        usuario = interaction.user
-        if usuario.id != self.usuario_id:
+        usuario_interacao = interaction.user # Captura o usuário da interação
+        if usuario_interacao.id != self.usuario_id:
             await interaction.followup.send( # Usar followup.send
                 "🚫 Esta interação não é para você.", ephemeral=True, delete_after=5)
             return
@@ -185,17 +186,17 @@ class QueueThreadView(discord.ui.View):
         try:
             # Remover o usuário da fila
             fila_atual = list(filas[self.recurso]._queue)
-            if usuario.id in fila_atual:
-                nova_fila = [uid for uid in fila_atual if uid != usuario.id]
+            if usuario_interacao.id in fila_atual:
+                nova_fila = [uid for uid in fila_atual if uid != usuario_interacao.id]
                 filas[self.recurso] = asyncio.Queue()  # Recria a fila
                 for uid in nova_fila:
                     await filas[self.recurso].put(uid)
 
                 await logar(
-                    f"{usuario.mention} saiu da fila para **{self.recurso}** via botão na thread."
+                    f"{usuario_interacao.mention} saiu da fila para **{self.recurso}** via botão na thread."
                 )
                 await deletar_canal_fila_temporario(
-                    usuario, self.recurso)  # Deleta a thread da fila
+                    usuario_interacao, self.recurso)  # Deleta a thread da fila
                 await atualizar_status()
                 await interaction.followup.send( # Usar followup.send
                     f"❌ Você saiu da fila para **{self.recurso}**.",
@@ -206,7 +207,7 @@ class QueueThreadView(discord.ui.View):
                     ephemeral=True, delete_after=5)
         except Exception as e:
             print(
-                f"❌ Erro ao sair da fila via botão para {usuario.name} do {self.recurso}: {e}"
+                f"❌ Erro ao sair da fila via botão para {usuario_interacao.name} do {self.recurso}: {e}"
             )
             if not interaction.response.is_done():
                 await interaction.followup.send( # Usar followup.send
@@ -234,47 +235,53 @@ class MenuConexao(discord.ui.View):
         await interaction.response.defer(ephemeral=True) # Deferir como efêmero
 
         recurso = select.values[0]
-        usuario = interaction.user
+        usuario_interacao = interaction.user # Captura o usuário da interação
 
         try:
             if recursos[recurso] is None:
                 # Recurso liberado, conectar o usuário
-                recursos[recurso] = usuario
-                await logar(f"{usuario.mention} conectou ao **{recurso}**")
+                recursos[recurso] = usuario_interacao.id # Armazena o ID do usuário
+                await logar(f"{usuario_interacao.mention} conectou ao **{recurso}**")
                 iniciar_timer(recurso)
                 await criar_canal_temporario(
-                    usuario, recurso)  # Cria a thread de conexão ativa
+                    usuario_interacao, recurso)  # Cria a thread de conexão ativa
                 await interaction.followup.send( # Usar followup.send
                     f"🔌 Você se conectou ao **{recurso}**.", ephemeral=True, delete_after=5)
-            elif recursos[recurso] == usuario:
+            # Ao comparar, compare o ID do usuário para robustez
+            elif recursos[recurso] == usuario_interacao.id: 
                 # Usuário já conectado, desconectar
-                await logar(f"{usuario.mention} desconectou do **{recurso}**")
+                await logar(f"{usuario_interacao.mention} desconectou do **{recurso}**")
                 recursos[recurso] = None
                 cancelar_timer(recurso)
                 await deletar_canal_temporario(
-                    usuario, recurso)  # Deleta a thread de conexão ativa
+                    usuario_interacao, recurso)  # Deleta a thread de conexão ativa
                 await verificar_fila(recurso
                                      )  # Verifica a fila após desconexão
                 await interaction.followup.send( # Usar followup.send
                     f"❌ Você se desconectou do **{recurso}**.", ephemeral=True, delete_after=5)
             else:
                 # Recurso em uso por outra pessoa, oferecer fila
-                ocupante = recursos[recurso]
-                ocupante_mention = ocupante.mention if hasattr(
-                    ocupante, 'mention') else "outro usuário"
+                ocupante_id = recursos[recurso] # Pega o ID do ocupante
+                ocupante_mention = "outro usuário"
+                if ocupante_id:
+                    try:
+                        ocupante_obj = await bot.fetch_user(ocupante_id) # Tenta buscar o objeto usuário
+                        ocupante_mention = ocupante_obj.mention
+                    except discord.NotFound:
+                        ocupante_mention = "[Usuário Desconhecido]" # Fallback se o usuário não for encontrado
 
                 # Verificar se o usuário já está na fila
                 fila_atual = list(
                     filas[recurso]._queue
                 )  # Acessar a fila interna (não recomendado para modificação, mas ok para leitura)
-                if usuario.id in fila_atual:
+                if usuario_interacao.id in fila_atual:
                     await interaction.followup.send( # Usar followup.send
-                        f"Você já está na fila para **{recurso}**. Sua posição: {fila_atual.index(usuario.id) + 1}.",
+                        f"Você já está na fila para **{recurso}**. Sua posição: {fila_atual.index(usuario_interacao.id) + 1}.",
                         ephemeral=True, delete_after=5)
                     await atualizar_status()  # Atualiza o status para garantir
                     return
 
-                view = ConfirmarFilaView(recurso, usuario.id)
+                view = ConfirmarFilaView(recurso, usuario_interacao.id)
                 # A mensagem com os botões deve ser enviada via followup.send após o defer
                 await interaction.followup.send(
                     f"🚫 O **{recurso}** já está em uso por {ocupante_mention}. Deseja entrar na fila?",
@@ -287,14 +294,14 @@ class MenuConexao(discord.ui.View):
                 # As respostas subsequentes (após a espera do botão) já devem ser followup.send
                 if view.value is True:
                     await filas[recurso].put(
-                        usuario.id)  # Adiciona o ID do usuário à fila
+                        usuario_interacao.id)  # Adiciona o ID do usuário à fila
                     posicao_na_fila = list(filas[recurso]._queue).index(
-                        usuario.id) + 1  # Posição correta
+                        usuario_interacao.id) + 1  # Posição correta
                     await logar(
-                        f"{usuario.mention} entrou na fila para **{recurso}**. Posição: {posicao_na_fila}"
+                        f"{usuario_interacao.mention} entrou na fila para **{recurso}**. Posição: {posicao_na_fila}"
                     )
                     # NOVO: Cria a thread da fila em vez de enviar mensagem efêmera
-                    await criar_canal_fila_temporario(usuario, recurso,
+                    await criar_canal_fila_temporario(usuario_interacao, recurso,
                                                       posicao_na_fila)
                     await interaction.followup.send(
                         f"✅ Você entrou na fila para **{recurso}**. Verifique seu canal temporário de fila.",
@@ -312,7 +319,7 @@ class MenuConexao(discord.ui.View):
             )  # Sempre atualizar o status após qualquer mudança de conexão/fila
         except Exception as e:
             print(
-                f"❌ Erro no select_callback para {usuario.name} e {recurso}: {e}"
+                f"❌ Erro no select_callback para {usuario_interacao.name} e {recurso}: {e}"
             )
             if not interaction.response.is_done(): # Verifica se a resposta já foi enviada
                 await interaction.followup.send( # Usar followup.send
@@ -331,17 +338,25 @@ async def atualizar_status():
         msg_id = await buscar_msg_fixa(canal)
         conteudo = "**💻 Status das Conexões:**\n\n"  # Mantém o emoji de laptop aqui
 
-        for nome, usuario in recursos.items():
+        for nome, usuario_id in recursos.items(): # Itera sobre o ID do usuário
             fila_len = filas[nome].qsize()
             fila_info = f" ({fila_len} na fila)" if fila_len > 0 else ""
 
             # Ajuste para o layout e emojis da imagem
             conteudo += f"💻 **{nome}**{fila_info}\n"  # Emoji de laptop antes do nome do recurso
 
-            # AQUI: Se o usuário é um objeto discord.User, tente usar a menção.
-            # Caso contrário (se for None ou um ID não resolvido), mostre "Liberado!"
-            if isinstance(usuario, discord.User) or isinstance(usuario, discord.Member):
-                conteudo += f"🔴 Em uso por {usuario.mention}\n"  # Emoji de círculo vermelho para em uso
+            if usuario_id is not None: # Se há um ID de usuário armazenado
+                try:
+                    # Tenta buscar o objeto User/Member completo a partir do ID
+                    usuario_obj = await bot.fetch_user(usuario_id) 
+                    conteudo += f"🔴 Em uso por {usuario_obj.mention}\n"  # Usa a menção do objeto completo
+                except discord.NotFound:
+                    # Se o usuário não for encontrado (ex: saiu do servidor), mostra como desconhecido
+                    conteudo += f"🔴 Em uso por [Usuário Desconhecido]\n"
+                except Exception as e:
+                    # Outro erro ao buscar o usuário
+                    print(f"❌ Erro ao buscar usuário {usuario_id} para status: {e}")
+                    conteudo += f"🔴 Em uso por [Erro ao carregar usuário]\n"
             else:
                 conteudo += f"✅ Liberado!\n"  # Emoji de check mark verde para liberado
             # NENHUMA linha em branco extra aqui, para evitar espaçamento duplo
@@ -400,25 +415,36 @@ def iniciar_timer(recurso):
     """Inicia um timer de 4 horas para desconexão automática do recurso."""
 
     async def desconectar_apos_tempo():
-        if recursos[recurso]: # Verifica se ainda há um usuário antes de esperar
-            usuario = recursos[recurso] # Captura o usuário antes do sleep, caso mude
-            await asyncio.sleep(14400)  # 4 horas = 14400 segundos
+        # Captura o ID do usuário antes do sleep, caso o objeto mude ou seja removido
+        usuario_id_no_momento = recursos[recurso] 
+        if usuario_id_no_momento is None: # Recurso já liberado manualmente
+            return
 
-            # Verifica novamente se o usuário ainda é o mesmo após o sleep
-            if recursos[recurso] == usuario: 
+        await asyncio.sleep(14400)  # 4 horas = 14400 segundos
+
+        # Verifica novamente se o ID do usuário ainda é o mesmo após o sleep
+        if recursos[recurso] == usuario_id_no_momento: 
+            # Tenta buscar o objeto usuário para o log e deleção de thread
+            try:
+                usuario_obj = await bot.fetch_user(usuario_id_no_momento)
                 await logar(
-                    f"⏱ Tempo expirado: {usuario.mention} foi desconectado de **{recurso}**."
+                    f"⏱ Tempo expirado: {usuario_obj.mention} foi desconectado de **{recurso}**."
                 )
                 await deletar_canal_temporario(
-                    usuario, recurso)  # Deleta a thread de conexão ativa
-                recursos[recurso] = None
-                await atualizar_status()
-                await verificar_fila(recurso
-                                     )  # Verifica a fila após desconexão por tempo
-            else:
-                # O recurso já foi liberado ou ocupado por outro usuário manualmente
-                # antes do timer expirar. Não faz nada para evitar conflitos.
-                pass 
+                    usuario_obj, recurso)  # Deleta a thread de conexão ativa
+            except discord.NotFound:
+                await logar(f"⏱ Tempo expirado: Usuário com ID {usuario_id_no_momento} não encontrado. Desconectado de **{recurso}**.")
+            except Exception as e:
+                await logar(f"❌ Erro ao processar desconexão por tempo para {usuario_id_no_momento} do {recurso}: {e}")
+
+            recursos[recurso] = None
+            await atualizar_status()
+            await verificar_fila(recurso
+                                 )  # Verifica a fila após desconexão por tempo
+        else:
+            # O recurso já foi liberado ou ocupado por outro usuário manualmente
+            # antes do timer expirar. Não faz nada para evitar conflitos.
+            pass 
 
     # Cancela qualquer timer existente para este recurso antes de iniciar um novo
     cancelar_timer(recurso)
@@ -609,7 +635,7 @@ async def verificar_fila(recurso: str):
             if proximo_usuario:
                 # Verifica novamente se o recurso ainda está livre antes de conectar
                 if recursos[recurso] is None:
-                    recursos[recurso] = proximo_usuario
+                    recursos[recurso] = proximo_usuario.id # Armazena o ID do usuário
                     iniciar_timer(recurso)
                     await criar_canal_temporario(
                         proximo_usuario,
@@ -700,16 +726,17 @@ async def iniciaruso(interaction: discord.Interaction, recurso: str):
         return
 
     if recursos[recurso] is not None:
-        ocupante = recursos[recurso]
-        # Tenta buscar o objeto Member/User completo para garantir a menção
-        if isinstance(ocupante, int): # Se for apenas um ID de usuário
+        ocupante_id = recursos[recurso] # Pega o ID do ocupante
+        ocupante_mention = "outro usuário"
+        if ocupante_id: # Tenta resolver a menção se o ID existe
             try:
-                ocupante = await bot.fetch_user(ocupante)
+                ocupante_obj = await bot.fetch_user(ocupante_id)
+                ocupante_mention = ocupante_obj.mention
             except discord.NotFound:
-                ocupante = None # Usuário não encontrado
-
-        ocupante_mention = ocupante.mention if ocupante else "outro usuário"
-
+                ocupante_mention = "[Usuário Desconhecido]" # Fallback
+            except Exception as e:
+                print(f"❌ Erro ao buscar ocupante {ocupante_id} no /iniciaruso: {e}")
+                ocupante_mention = "[Erro ao carregar usuário]"
 
         # Verificar se o usuário já está na fila
         fila_atual = list(filas[recurso]._queue)
@@ -754,7 +781,7 @@ async def iniciaruso(interaction: discord.Interaction, recurso: str):
         return
 
     # Se o recurso estiver liberado, conectar diretamente
-    recursos[recurso] = interaction.user
+    recursos[recurso] = interaction.user.id # Armazena o ID do usuário
     iniciar_timer(recurso)
     await logar(
         f"{interaction.user.mention} iniciou o uso de **{recurso}** via comando."
@@ -776,7 +803,8 @@ async def encerraruso(interaction: discord.Interaction, recurso: str):
         await interaction.followup.send("❌ Esse recurso não existe.",
                                                 ephemeral=True, delete_after=5)
         return
-    if recursos[recurso] != interaction.user:
+    # Ao comparar, compare o ID do usuário para robustez
+    if recursos[recurso] != interaction.user.id: 
         await interaction.followup.send(
             "🚫 Você não está usando esse recurso.", ephemeral=True, delete_after=5)
         return
@@ -805,7 +833,8 @@ async def entrarfila(interaction: discord.Interaction, recurso: str):
                                                 ephemeral=True, delete_after=5)
         return
 
-    if recursos[recurso] == interaction.user:
+    # Ao comparar, compare o ID do usuário para robustez
+    if recursos[recurso] == interaction.user.id: 
         await interaction.followup.send(
             f"Você já está conectado a **{recurso}**.", ephemeral=True, delete_after=5)
         return
@@ -821,7 +850,7 @@ async def entrarfila(interaction: discord.Interaction, recurso: str):
     posicao_na_fila = list(filas[recurso]._queue).index(
         interaction.user.id) + 1
     await logar(
-        f"{interaction.user.mention} entrou na fila para **{recurso}**. Posição: {posicao_na_fila}"
+        f"{interaction.user.mention} entrou na fila para **{recurso}** via comando."
     )
     # NOVO: Cria a thread da fila em vez de enviar mensagem efêmera
     await criar_canal_fila_temporario(interaction.user, recurso,
