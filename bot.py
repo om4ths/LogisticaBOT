@@ -980,4 +980,3 @@ discord_thread = Thread(target=start_discord_bot)
 discord_thread.start()
 
 # O Gunicorn irá servir o 'app' Flask. Nenhuma chamada app.run() é necessária aqui.
-�
