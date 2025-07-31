@@ -1,10 +1,14 @@
 import asyncio
 import os
 from datetime import datetime, timedelta
+from threading import Thread # Reintroduzindo Thread para o bot
 
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
+
+# Importa Flask
+from flask import Flask
 
 print("O bot está funcionando")
 
@@ -263,7 +267,7 @@ class MenuConexao(discord.ui.View):
                 # Recurso em uso por outra pessoa, oferecer fila
                 ocupante_id = recursos[recurso] # Pega o ID do ocupante
                 ocupante_mention = "outro usuário"
-                if ocupante_id:
+                if ocupante_id: # Tenta resolver a menção se o ID existe
                     try:
                         ocupante_obj = await bot.fetch_user(ocupante_id) # Tenta buscar o objeto usuário
                         ocupante_mention = ocupante_obj.mention
@@ -949,20 +953,22 @@ async def on_ready():
 
 
 # --- Manutenção Online (Flask) ---
-from flask import Flask
-from threading import Thread # Threading não será mais usado para manter_online
-
-app = Flask('')
+app = Flask(__name__) # Use __name__ para o nome do módulo Flask
 
 @app.route('/')
 def home():
     # Este endpoint é usado pelo Render para health checks e pelo UptimeRobot
     return "Bot online!"
 
-# REMOVIDO: run() e manter_online() - Gunicorn gerencia a execução do Flask
+# Função para iniciar o bot do Discord em uma thread separada
+def start_discord_bot():
+    # O bot.run() é um método bloqueante, então precisa rodar em uma thread separada
+    # para não bloquear o servidor Flask.
+    bot.run(TOKEN)
 
-# O bot.run(TOKEN) é movido para dentro do on_ready para garantir que o Flask seja iniciado após o bot estar pronto.
-# No entanto, em ambientes como Replit, o bot.run() é o ponto de entrada principal.
-# Se estiver usando Replit, mantenha o bot.run(TOKEN) no final do script.
-# Para este exemplo, o on_ready é suficiente para iniciar o Flask.
-bot.run(TOKEN)
+# Inicia o bot do Discord em uma thread separada quando o Flask é iniciado pelo Gunicorn
+# Isso garante que o Flask esteja escutando na porta para o Render, e o bot rode em paralelo.
+discord_thread = Thread(target=start_discord_bot)
+discord_thread.start()
+
+# O Gunicorn irá servir o 'app' Flask. Nenhuma chamada app.run() é necessária aqui.
