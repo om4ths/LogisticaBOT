@@ -108,25 +108,40 @@ async def encerrar_uso_automatico(recurso, user):
         del conexoes[recurso]
         canal = bot.get_channel(LOG_CHANNEL_ID)
         await canal.send(f"⏱️ {user.mention} foi desconectado automaticamente de **{recurso}**")
-        atualizar_mensagem_menu.start()
+        @tasks.loop(seconds=5)
+        async def atualizar_mensagem_menu():
+            try:
+                canal = bot.get_channel(HOSPEDAGEM_CHANNEL_ID)
+                if not canal:
+                    print("❌ Canal de hospedagem não encontrado.")
+                    return
 
-@tasks.loop(seconds=5)
-async def atualizar_mensagem_menu():
-    try:
-        canal = bot.get_channel(HOSPEDAGEM_CHANNEL_ID)
-        with open("dados.json", "r") as f:
-            data = json.load(f)
-        mensagem = await canal.fetch_message(data["message_id"])
-        texto = "**Status dos Recursos:**\n"
-        for option in MenuSelect().options:
-            status = conexoes.get(option.label)
-            if status:
-                texto += f"🔴 {option.label} - {status['user'].display_name}\n"
-            else:
-                texto += f"🟢 {option.label} - Livre\n"
-        await mensagem.edit(content=texto, view=MenuView())
-    except Exception as e:
-        print("Erro ao atualizar mensagem:", e)
-    atualizar_mensagem_menu.stop()
+                with open("dados.json", "r") as f:
+                    data = json.load(f)
+
+                message_id = data.get("message_id")
+                if not message_id:
+                    print("❌ message_id não encontrado no dados.json")
+                    return
+
+                mensagem = await canal.fetch_message(message_id)
+                print(f"✏️ Editando mensagem ID: {message_id}")
+
+                texto = "**Status dos Recursos:**\n"
+                for option in MenuSelect().options:
+                    status = conexoes.get(option.label)
+                    if status:
+                        texto += f"🔴 {option.label} - {status['user'].display_name}\n"
+                    else:
+                        texto += f"🟢 {option.label} - Livre\n"
+
+                await mensagem.edit(content=texto, view=MenuView())
+                print("✅ Mensagem atualizada com sucesso!")
+
+            except Exception as e:
+                print("❌ Erro ao atualizar mensagem:", e)
+
+            atualizar_mensagem_menu.stop()
+
 
 bot.run(TOKEN)
