@@ -292,9 +292,9 @@ class MenuConexao(discord.ui.View):
                 view = ConfirmarFilaView(recurso, usuario_interacao.id)
                 # A mensagem com os botões deve ser enviada via followup.send após o defer
                 await interaction.followup.send(
-                    f"🚫 O **{recurso}** já está em uso por {ocupante_mention}. Deseja entrar na fila?",
+                    f"� O **{recurso}** já está em uso por {ocupante_mention}. Deseja entrar na fila?",
                     view=view,
-                    ephemeral=True, delete_after=60) # delete_after aqui é para a mensagem de pergunta
+                    ephemeral=True, delete_after=15) # delete_after aqui é para a mensagem de pergunta
 
                 # Esperar pela resposta do usuário. A resposta do botão será uma edição da mensagem original.
                 await view.wait()
@@ -980,3 +980,4 @@ discord_thread = Thread(target=start_discord_bot)
 discord_thread.start()
 
 # O Gunicorn irá servir o 'app' Flask. Nenhuma chamada app.run() é necessária aqui.
+�
