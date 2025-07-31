@@ -8,10 +8,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
-GUILD_ID = int(os.getenv("GUILD_ID"))
-HOSPEDAGEM_CHANNEL_ID = int(os.getenv("HOSPEDAGEM_CHANNEL_ID"))
-LOG_CHANNEL_ID = int(os.getenv("LOG_CHANNEL_ID"))
-TEMPO_MAXIMO = 4 * 60 * 60  # 4 horas em segundos
+GUILD_ID = os.getenv(
+    "GUILD_ID")  # Não usado diretamente no código, mas mantido para referência
+
+if not TOKEN:
+    print("❌ ERRO: TOKEN não encontrado nas variáveis de ambiente!")
+    print("Por favor, adicione seu token do Discord bot nas Secrets.")
+    exit(1)
+
+print("Token configurado:", "✅" if TOKEN else "❌")
+
+CANAL_ID_HOSPEDAGEM = int("1386760046456868925") # ID do canal onde o status é exibido
+CANAL_ID_LOGS = int("1386793302623391814") # ID do canal para logs
 
 intents = discord.Intents.default()
 intents.message_content = True
