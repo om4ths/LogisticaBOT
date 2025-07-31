@@ -3,3 +3,4 @@ Flask
 gunicorn
 dnspython
 pymongo
+python-dotenv
