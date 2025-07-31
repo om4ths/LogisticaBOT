@@ -242,9 +242,11 @@ class MenuConexao(discord.ui.View):
         usuario_interacao = interaction.user # Captura o usuário da interação
 
         try:
+            print(f"DEBUG: select_callback - Recurso selecionado: {recurso} por {usuario_interacao.name} ({usuario_interacao.id})") # DEBUG
             if recursos[recurso] is None:
                 # Recurso liberado, conectar o usuário
                 recursos[recurso] = usuario_interacao.id # Armazena o ID do usuário
+                print(f"DEBUG: Recursos após conexão: {recursos}") # DEBUG
                 await logar(f"{usuario_interacao.mention} conectou ao **{recurso}**")
                 iniciar_timer(recurso)
                 await criar_canal_temporario(
@@ -254,6 +256,7 @@ class MenuConexao(discord.ui.View):
             # Ao comparar, compare o ID do usuário para robustez
             elif recursos[recurso] == usuario_interacao.id: 
                 # Usuário já conectado, desconectar
+                print(f"DEBUG: Recursos antes da desconexão: {recursos}") # DEBUG
                 await logar(f"{usuario_interacao.mention} desconectou do **{recurso}**")
                 recursos[recurso] = None
                 cancelar_timer(recurso)
@@ -263,6 +266,7 @@ class MenuConexao(discord.ui.View):
                                      )  # Verifica a fila após desconexão
                 await interaction.followup.send( # Usar followup.send
                     f"❌ Você se desconectou do **{recurso}**.", ephemeral=True, delete_after=5)
+                print(f"DEBUG: Recursos após desconexão: {recursos}") # DEBUG
             else:
                 # Recurso em uso por outra pessoa, oferecer fila
                 ocupante_id = recursos[recurso] # Pega o ID do ocupante
@@ -332,6 +336,7 @@ class MenuConexao(discord.ui.View):
 
 async def atualizar_status():
     """Atualiza a mensagem fixa no canal de hospedagem com o status dos recursos."""
+    print(f"DEBUG: Atualizando status. Current recursos: {recursos}") # DEBUG
     try:
         canal = bot.get_channel(CANAL_ID_HOSPEDAGEM)
         if not canal:
@@ -356,6 +361,7 @@ async def atualizar_status():
                     conteudo += f"🔴 Em uso por {usuario_obj.mention}\n"  # Usa a menção do objeto completo
                 except discord.NotFound:
                     # Se o usuário não for encontrado (ex: saiu do servidor), mostra como desconhecido
+                    print(f"DEBUG: Usuário {usuario_id} não encontrado para {nome}.") # DEBUG
                     conteudo += f"🔴 Em uso por [Usuário Desconhecido]\n"
                 except Exception as e:
                     # Outro erro ao buscar o usuário
@@ -373,6 +379,7 @@ async def atualizar_status():
                 await msg.edit(content=conteudo, view=view)
             except discord.NotFound:
                 # Mensagem não encontrada, criar uma nova
+                print(f"DEBUG: Mensagem de status não encontrada. Criando nova.") # DEBUG
                 nova_msg = await canal.send(content=conteudo, view=view)
                 await nova_msg.pin()
             except Exception as edit_error:
@@ -383,6 +390,7 @@ async def atualizar_status():
                 await nova_msg.pin()
         else:
             # Nenhuma mensagem fixa encontrada, criar uma nova
+            print(f"DEBUG: Nenhuma mensagem de status fixa. Criando nova.") # DEBUG
             nova_msg = await canal.send(content=conteudo, view=view)
             await nova_msg.pin()
     except Exception as e:
