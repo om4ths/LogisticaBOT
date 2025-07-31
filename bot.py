@@ -292,9 +292,9 @@ class MenuConexao(discord.ui.View):
                 view = ConfirmarFilaView(recurso, usuario_interacao.id)
                 # A mensagem com os botões deve ser enviada via followup.send após o defer
                 await interaction.followup.send(
-                    f"� O **{recurso}** já está em uso por {ocupante_mention}. Deseja entrar na fila?",
+                    f"🚫 O **{recurso}** já está em uso por {ocupante_mention}. Deseja entrar na fila?",
                     view=view,
-                    ephemeral=True, delete_after=15) # delete_after aqui é para a mensagem de pergunta
+                    ephemeral=True, delete_after=60) # delete_after aqui é para a mensagem de pergunta
 
                 # Esperar pela resposta do usuário. A resposta do botão será uma edição da mensagem original.
                 await view.wait()
@@ -673,8 +673,8 @@ async def verificar_fila(recurso: str):
                             )
                     else:  # Sem ID da thread, envia DM como fallback
                         await proximo_usuario.send(
-                            f"🎉 O recurso **{recurso}** está agora **AUTOMATICAMENTE CONECTADO** para você! "
-                            "Houve um problema ao criar seu canal temporário, mas você está conectado."
+                            f"� O recurso **{recurso}** está agora **AUTOMATICAMENTE CONECTADO** para você! "
+                                "Houve um problema ao criar seu canal temporário, mas você está conectado."
                         )
 
                     await logar(
@@ -924,59 +924,4 @@ async def verfila(interaction: discord.Interaction, recurso: str = None):
 
     for r in recursos_para_verificar:
         fila_atual = list(filas[r]._queue)
-        if not fila_atual:
-            response_content += f"**{r}**: Fila vazia.\n"
-        else:
-            response_content += f"**{r}** ({len(fila_atual)} na fila):\n"
-            for i, user_id in enumerate(fila_atual):
-                try:
-                    user = await bot.fetch_user(user_id)
-                    response_content += f"  {i+1}. {user.display_name}\n"
-                except discord.NotFound:
-                    response_content += f"  {i+1}. Usuário desconhecido (ID: {user_id})\n"
-                except Exception as e:
-                    response_content += f"  {i+1}. Erro ao buscar usuário (ID: {user_id}): {e}\n"
-        response_content += "\n"  # Adiciona uma linha em branco entre os recursos
-
-    await interaction.followup.send(response_content, ephemeral=True)
-
-
-# --- Eventos do Bot ---
-
-
-@bot.event
-async def on_ready():
-    """Evento disparado quando o bot está pronto."""
-    await bot.wait_until_ready()
-    await atualizar_status()  # Atualiza o status ao iniciar
-    try:
-        # Sincroniza os comandos de barra com o Discord
-        synced = await bot.tree.sync()
-        print(f"✅ Comandos sincronizados: {len(synced)}")
-    except Exception as e:
-        print(f"❌ Erro ao sincronizar comandos: {e}")
-    print(f"🤖 Bot conectado como {bot.user}")
-    # Inicia a tarefa de persistência do Flask
-    # REMOVIDO: manter_online() - Gunicorn gerencia o Flask no Render
-
-
-# --- Manutenção Online (Flask) ---
-app = Flask(__name__) # Use __name__ para o nome do módulo Flask
-
-@app.route('/')
-def home():
-    # Este endpoint é usado pelo Render para health checks e pelo UptimeRobot
-    return "Bot online!"
-
-# Função para iniciar o bot do Discord em uma thread separada
-def start_discord_bot():
-    # O bot.run() é um método bloqueante, então precisa rodar em uma thread separada
-    # para não bloquear o servidor Flask.
-    bot.run(TOKEN)
-
-# Inicia o bot do Discord em uma thread separada quando o Flask é iniciado pelo Gunicorn
-# Isso garante que o Flask esteja escutando na porta para o Render, e o bot rode em paralelo.
-discord_thread = Thread(target=start_discord_bot)
-discord_thread.start()
-
-# O Gunicorn irá servir o 'app' Flask. Nenhuma chamada app.run() é necessária aqui.
+        if not fila_atu�
