@@ -8,18 +8,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
-GUILD_ID = os.getenv(
-    "GUILD_ID")  # Não usado diretamente no código, mas mantido para referência
-
-if not TOKEN:
-    print("❌ ERRO: TOKEN não encontrado nas variáveis de ambiente!")
-    print("Por favor, adicione seu token do Discord bot nas Secrets.")
-    exit(1)
-
-print("Token configurado:", "✅" if TOKEN else "❌")
-
-CANAL_ID_HOSPEDAGEM = int("1386760046456868925") # ID do canal onde o status é exibido
-CANAL_ID_LOGS = int("1386793302623391814") # ID do canal para logs
+GUILD_ID = int(os.getenv("GUILD_ID"))
+HOSPEDAGEM_CHANNEL_ID = int(os.getenv("HOSPEDAGEM_CHANNEL_ID"))
+LOG_CHANNEL_ID = int(os.getenv("LOG_CHANNEL_ID"))
+TEMPO_MAXIMO = 4 * 60 * 60  # 4 horas
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -108,49 +100,49 @@ async def encerrar_uso_automatico(recurso, user):
         del conexoes[recurso]
         canal = bot.get_channel(LOG_CHANNEL_ID)
         await canal.send(f"⏱️ {user.mention} foi desconectado automaticamente de **{recurso}**")
-        @tasks.loop(seconds=5)
-            @tasks.loop(seconds=5)
-            async def atualizar_mensagem_menu():
-                try:
-                    canal = bot.get_channel(HOSPEDAGEM_CHANNEL_ID)
-                    if not canal:
-                        print("❌ Canal de hospedagem não encontrado.")
-                        return
+        atualizar_mensagem_menu.start()
 
-                    with open("dados.json", "r") as f:
-                        data = json.load(f)
+@tasks.loop(seconds=5)
+async def atualizar_mensagem_menu():
+    try:
+        canal = bot.get_channel(HOSPEDAGEM_CHANNEL_ID)
+        if not canal:
+            print("❌ Canal de hospedagem não encontrado.")
+            return
 
-                    message_id = data.get("message_id")
-                    if not message_id:
-                        print("❌ message_id não encontrado no dados.json")
-                        return
+        with open("dados.json", "r") as f:
+            data = json.load(f)
 
-                    try:
-                        mensagem = await canal.fetch_message(message_id)
-                        print(f"✏️ Editando mensagem ID: {message_id}")
-                        texto = "**Status dos Recursos:**\n"
-                        for option in MenuSelect().options:
-                            status = conexoes.get(option.label)
-                            if status:
-                                texto += f"🔴 {option.label} - {status['user'].display_name}\n"
-                            else:
-                                texto += f"🟢 {option.label} - Livre\n"
+        message_id = data.get("message_id")
+        if not message_id:
+            print("❌ message_id não encontrado no dados.json")
+            return
 
-                        await mensagem.edit(content=texto, view=MenuView())
-                        print("✅ Mensagem atualizada com sucesso!")
-                    except discord.errors.Forbidden:
-                        print(f"❌ Não tem permissão para editar a mensagem. Tentando criar uma nova.")
-                        nova_mensagem = await canal.send("Selecione um recurso:", view=MenuView())
-                        with open("dados.json", "w") as f:
-                            json.dump({"message_id": nova_mensagem.id}, f)
-                        print("✅ Nova mensagem criada com sucesso!")
-                    except Exception as e:
-                        print("❌ Erro ao atualizar mensagem:", e)
+        try:
+            mensagem = await canal.fetch_message(message_id)
+            print(f"✏️ Editando mensagem ID: {message_id}")
+            texto = "**Status dos Recursos:**\n"
+            for option in MenuSelect().options:
+                status = conexoes.get(option.label)
+                if status:
+                    texto += f"🔴 {option.label} - {status['user'].display_name}\n"
+                else:
+                    texto += f"🟢 {option.label} - Livre\n"
 
-                except Exception as e:
-                    print("❌ Erro ao tentar atualizar a mensagem:", e)
+            await mensagem.edit(content=texto, view=MenuView())
+            print("✅ Mensagem atualizada com sucesso!")
+        except discord.errors.Forbidden:
+            print(f"❌ Sem permissão para editar. Criando nova mensagem...")
+            nova_mensagem = await canal.send("Selecione um recurso:", view=MenuView())
+            with open("dados.json", "w") as f:
+                json.dump({"message_id": nova_mensagem.id}, f)
+            print("✅ Nova mensagem criada com sucesso!")
+        except Exception as e:
+            print("❌ Erro ao editar mensagem:", e)
 
-                atualizar_mensagem_menu.stop()
+    except Exception as e:
+        print("❌ Erro geral ao atualizar:", e)
 
+    atualizar_mensagem_menu.stop()
 
 bot.run(TOKEN)
