@@ -35,8 +35,9 @@ recursos = {
     "BR Data App 02": None,
     "BR Data - BD (SQL/Mongo)": None,
     "BR Data - Compartilhada": None,
-    "Soul - App 01": None,
-    "Soul - App 02": None,
+    "Soul - Global 01": None,
+    "Soul - Global 02": None,
+    "Soul - RDP's"
     "Soul - BD SQL": None,
     "Soul - BD MongoDB": None
 }
