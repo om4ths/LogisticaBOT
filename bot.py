@@ -37,7 +37,7 @@ recursos = {
     "BR Data - Compartilhada": None,
     "Soul - Global 01": None,
     "Soul - Global 02": None,
-    "Soul - RDP's"
+    "Soul - RDP's": None,
     "Soul - BD SQL": None,
     "Soul - BD MongoDB": None
 }
