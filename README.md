@@ -21,5 +21,6 @@ tempo máximo de uso de recursos, auxiliando na organização e monitoramento do
 * Integração com APIs de hospedagem
 
 📌 Contexto do Projeto
+
 Este projeto foi criado para atender uma necessidade real de controle e organização de acesso em ambiente interno de trabalho,
 sendo utilizado atualmente por membros da equipe.
