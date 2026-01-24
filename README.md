@@ -1,5 +1,8 @@
 🤖 DISCORD ACCESS & HOSTING MANAGER
 
+A versão publicada no GitHub utiliza nomes genéricos para recursos e ambientes, com o objetivo de preservar a segurança e confidencialidade.
+Nenhum dos nomes presentes no código corresponde a ambientes reais, e o repositório não contém informações sensíveis ou dados internos.
+
 Projeto desenvolvido em Python para controle de acesso e gerenciamento de uso de recursos em ambiente interno de hospedagem,
 integrado ao Discord.
 
