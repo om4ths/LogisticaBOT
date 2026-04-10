@@ -19,9 +19,9 @@ if not TOKEN:
 
 print("Token configurado:", "✅" if TOKEN else "❌")
 
-CANAL_ID_HOSPEDAGEM = int(
+#CANAL_ID_HOSPEDAGEM = int(
     "1386760046456868925")  # ID do canal onde o status é exibido
-CANAL_ID_LOGS = int("1386793302623391814")  # ID do canal para logs
+#CANAL_ID_LOGS = int("1386793302623391814")  # ID do canal para logs
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -723,8 +723,7 @@ async def verificar_fila(recurso: str):
                 # mandar DM apenas se for possível (fetch já foi feito)
                 if 'proximo_usuario' in locals() and proximo_usuario:
                     await proximo_usuario.send(
-                        f"❌ Ocorreu um erro ao tentar conectar você automaticamente ao recurso **{recurso}**. "
-                        "Por favor, tente se conectar manualmente ou entre em contato com um administrador."
+                        f"❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa."
                     )
             except Exception:
                 pass

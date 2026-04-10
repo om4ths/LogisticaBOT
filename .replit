@@ -20,3 +20,6 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python bot.py"
+
+[agent]
+expertMode = true
