@@ -671,15 +671,15 @@ async def verificar_fila(recurso: str):
                         thread = bot.get_channel(thread_id)
                         if thread:
                             await thread.send(
-                                f"{proximo_usuario.mention} ❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa."
+                                f"{proximo_usuario.mention} ❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa. Você está usando o plano gratuito, o tempo de conexão será reduzido"
                             )
                         else:
                             await proximo_usuario.send(
-                                "❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa."
+                                "❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa. Você está usando o plano gratuito, o tempo de conexão será reduzido"
                             )
                     else:
                         await proximo_usuario.send(
-                            "❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa."
+                            "❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa. Você está usando o plano gratuito, o tempo de conexão será reduzido"
                         )
                     await logar(
                         f"🔔 {proximo_usuario.mention} foi automaticamente conectado a **{recurso}** da fila."
@@ -781,7 +781,7 @@ async def iniciaruso(interaction: discord.Interaction, recurso: str):
     recursos[recurso] = interaction.user.id  # <-- armazenar ID
     iniciar_timer(recurso)
     await interaction.response.send_message(
-        "❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa.",
+        "❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa. Você está usando o plano gratuito, o tempo de conexão será reduzido",
         ephemeral=True,
     )
     await logar(
