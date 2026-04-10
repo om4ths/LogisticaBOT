@@ -306,7 +306,7 @@ class MenuConexao(discord.ui.View):
                 iniciar_timer(recurso)
                 await criar_canal_temporario(usuario_interacao, recurso)
                 msg = await interaction.followup.send(
-                    "❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa.",
+                    "❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa. Você está usando o plano gratuito, o tempo de conexão será reduzido",
                     ephemeral=True,
                 )
                 await asyncio.sleep(5)
@@ -491,7 +491,7 @@ def iniciar_timer(recurso):
     """Inicia um timer de 4 horas para desconexão automática do recurso."""
 
     async def desconectar_apos_tempo():
-        await asyncio.sleep(14400)
+        await asyncio.sleep(300)
         # recursos[recurso] agora guarda ID (int)
         usuario_id = recursos.get(recurso)
         if usuario_id:
@@ -782,7 +782,7 @@ async def iniciaruso(interaction: discord.Interaction, recurso: str):
     iniciar_timer(recurso)
     await interaction.response.send_message(
         "❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa.",
-        ephemeral=True
+        ephemeral=True,
     )
     await logar(
         f"{interaction.user.mention} iniciou o uso de **{recurso}** via comando."
