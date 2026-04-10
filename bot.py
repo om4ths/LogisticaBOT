@@ -306,7 +306,7 @@ class MenuConexao(discord.ui.View):
                 iniciar_timer(recurso)
                 await criar_canal_temporario(usuario_interacao, recurso)
                 msg = await interaction.followup.send(
-                    f"🔌 Você se conectou ao **{recurso}**.",
+                    "❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa.",
                     ephemeral=True,
                 )
                 await asyncio.sleep(5)
@@ -671,18 +671,15 @@ async def verificar_fila(recurso: str):
                         thread = bot.get_channel(thread_id)
                         if thread:
                             await thread.send(
-                                f"🎉 {proximo_usuario.mention}, o recurso **{recurso}** está agora **AUTOMATICAMENTE CONECTADO** para você! "
-                                "Este é o seu canal temporário para uso. Lembre-se do tempo limite de 4 horas."
+                                f"{proximo_usuario.mention} ❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa."
                             )
                         else:
                             await proximo_usuario.send(
-                                f"🎉 O recurso **{recurso}** está agora **AUTOMATICAMENTE CONECTADO** para você! "
-                                "Houve um problema ao criar seu canal temporário, mas você está conectado."
+                                "❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa."
                             )
                     else:
                         await proximo_usuario.send(
-                            f"🎉 O recurso **{recurso}** está agora **AUTOMATICAMENTE CONECTADO** para você! "
-                            "Houve um problema ao criar seu canal temporário, mas você está conectado."
+                            "❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa."
                         )
                     await logar(
                         f"🔔 {proximo_usuario.mention} foi automaticamente conectado a **{recurso}** da fila."
@@ -784,7 +781,8 @@ async def iniciaruso(interaction: discord.Interaction, recurso: str):
     recursos[recurso] = interaction.user.id  # <-- armazenar ID
     iniciar_timer(recurso)
     await interaction.response.send_message(
-        f"🔌 Você iniciou o uso de **{recurso}**.", ephemeral=True
+        "❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa.",
+        ephemeral=True
     )
     await logar(
         f"{interaction.user.mention} iniciou o uso de **{recurso}** via comando."
