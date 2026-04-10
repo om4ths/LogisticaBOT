@@ -306,7 +306,7 @@ class MenuConexao(discord.ui.View):
                 iniciar_timer(recurso)
                 await criar_canal_temporario(usuario_interacao, recurso)
                 msg = await interaction.followup.send(
-                    "❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa. Você está usando o plano gratuito, o tempo de conexão será reduzido",
+                    "❌ CAT-T: Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa. Você está usando o plano gratuito, o tempo de conexão será reduzido",
                     ephemeral=True,
                 )
                 await asyncio.sleep(5)
@@ -488,7 +488,7 @@ async def logar(mensagem):
 
 
 def iniciar_timer(recurso):
-    """Inicia um timer de 4 horas para desconexão automática do recurso."""
+    """Inicia um timer de 5 Minutos para desconexão automática do recurso."""
 
     async def desconectar_apos_tempo():
         await asyncio.sleep(300)
@@ -537,7 +537,9 @@ async def criar_canal_temporario(usuario: discord.User, recurso: str):
             color=discord.Color.green(),
         )
         embed.add_field(
-            name="⏱️ Tempo Limite", value="4 horas (desconexão automática)", inline=False
+            name="⏱️ Tempo Limite",
+            value="5 minutos (desconexão automática)",
+            inline=False,
         )
         embed.add_field(
             name="📝 Como Desconectar",
@@ -671,15 +673,15 @@ async def verificar_fila(recurso: str):
                         thread = bot.get_channel(thread_id)
                         if thread:
                             await thread.send(
-                                f"{proximo_usuario.mention} ❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa. Você está usando o plano gratuito, o tempo de conexão será reduzido"
+                                f"{proximo_usuario.mention} ❌ CAT-T: Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa. Você está usando o plano gratuito, o tempo de conexão será reduzido"
                             )
                         else:
                             await proximo_usuario.send(
-                                "❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa. Você está usando o plano gratuito, o tempo de conexão será reduzido"
+                                "❌ CAT-T: Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa. Você está usando o plano gratuito, o tempo de conexão será reduzido"
                             )
                     else:
                         await proximo_usuario.send(
-                            "❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa. Você está usando o plano gratuito, o tempo de conexão será reduzido"
+                            "❌ CAT-T: Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa. Você está usando o plano gratuito, o tempo de conexão será reduzido"
                         )
                     await logar(
                         f"🔔 {proximo_usuario.mention} foi automaticamente conectado a **{recurso}** da fila."
@@ -781,7 +783,7 @@ async def iniciaruso(interaction: discord.Interaction, recurso: str):
     recursos[recurso] = interaction.user.id  # <-- armazenar ID
     iniciar_timer(recurso)
     await interaction.response.send_message(
-        "❌ Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa. Você está usando o plano gratuito, o tempo de conexão será reduzido",
+        "❌ CAT-T: Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa. Você está usando o plano gratuito, o tempo de conexão será reduzido",
         ephemeral=True,
     )
     await logar(
