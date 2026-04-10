@@ -309,7 +309,7 @@ class MenuConexao(discord.ui.View):
                     "❌ CAT-T: Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa. Você está usando o plano gratuito, o tempo de conexão será reduzido",
                     ephemeral=True,
                 )
-                await asyncio.sleep(5)
+                await asyncio.sleep(300)
                 await msg.delete()
             elif recursos[recurso] == usuario_interacao.id:
                 await logar(f"{usuario_interacao.mention} desconectou do **{recurso}**")
