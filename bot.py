@@ -10,7 +10,8 @@ print("O bot está funcionando")
 
 TOKEN = os.getenv("TOKEN")
 GUILD_ID = os.getenv(
-    "GUILD_ID")  # Não usado diretamente no código, mas mantido para referência
+    "GUILD_ID"
+)  # Não usado diretamente no código, mas mantido para referência
 
 if not TOKEN:
     print("❌ ERRO: TOKEN não encontrado nas variáveis de ambiente!")
@@ -19,8 +20,8 @@ if not TOKEN:
 
 print("Token configurado:", "✅" if TOKEN else "❌")
 
-#CANAL_ID_HOSPEDAGEM = int("1386760046456868925")  # ID do canal onde o status é exibido
-#CANAL_ID_LOGS = int("1386793302623391814")  # ID do canal para logs
+CANAL_ID_HOSPEDAGEM = int("1386760046456868925")  # ID do canal onde o status é exibido
+CANAL_ID_LOGS = int("1386793302623391814")  # ID do canal para logs
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -56,7 +57,7 @@ recursos = {
     "Soul - Global 02": None,
     "Soul - RDP's": None,
     "Soul - BD SQL": None,
-    "Soul - BD MongoDB": None
+    "Soul - BD MongoDB": None,
 }
 
 emoji_map = {
@@ -64,7 +65,7 @@ emoji_map = {
     "Compartilhada": "🌐",
     "APP": "🌐",
     "Global": "🌐",
-    "RDP's": "💻"
+    "RDP's": "💻",
 }
 # Dicionário para armazenar os timers de desconexão automática
 timers = {}
@@ -72,8 +73,7 @@ timers = {}
 canais_temporarios = {}  # {(usuario_id, recurso): canal_id}
 # Dicionário para armazenar as filas de espera para cada recurso
 filas = {
-    nome: asyncio.Queue()
-    for nome in recursos
+    nome: asyncio.Queue() for nome in recursos
 }  # Cada recurso tem sua própria fila
 # NOVO: Dicionário para armazenar os IDs dos canais temporários de fila
 canais_fila_temporarios = {}  # {(usuario_id, recurso): canal_id}
@@ -86,9 +86,11 @@ class BotaoDesconectar(discord.ui.View):
         super().__init__(timeout=None)
         self.recurso = recurso
         # Criar o botão dinamicamente dentro do __init__ para acessar 'recurso'
-        button = discord.ui.Button(label="🔌 Desconectar",
-                                   style=discord.ButtonStyle.red,
-                                   custom_id=f"desconectar_{recurso}")
+        button = discord.ui.Button(
+            label="🔌 Desconectar",
+            style=discord.ButtonStyle.red,
+            custom_id=f"desconectar_{recurso}",
+        )
         button.callback = self.desconectar_button  # Atribuir o callback ao botão
         self.add_item(button)  # Adicionar o botão à view
 
@@ -152,10 +154,10 @@ class ConfirmarFilaView(discord.ui.View):
         self.usuario_id = usuario_id
         self.value = None
 
-    @discord.ui.button(label="Sim, entrar na fila",
-                       style=discord.ButtonStyle.green)
-    async def confirm_button(self, interaction: discord.Interaction,
-                             button: discord.ui.Button):
+    @discord.ui.button(label="Sim, entrar na fila", style=discord.ButtonStyle.green)
+    async def confirm_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         if interaction.user.id != self.usuario_id:
             msg = await interaction.response.send_message(
                 "🚫 Esta interação não é para você.",
@@ -167,11 +169,13 @@ class ConfirmarFilaView(discord.ui.View):
         self.value = True
         self.stop()
         await interaction.response.edit_message(
-            content="✅ Você optou por entrar na fila.", view=None)
+            content="✅ Você optou por entrar na fila.", view=None
+        )
 
     @discord.ui.button(label="Não", style=discord.ButtonStyle.red)
-    async def cancel_button(self, interaction: discord.Interaction,
-                            button: discord.ui.Button):
+    async def cancel_button(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
         if interaction.user.id != self.usuario_id:
             msg = await interaction.response.send_message(
                 "🚫 Esta interação não é para você.",
@@ -183,7 +187,8 @@ class ConfirmarFilaView(discord.ui.View):
         self.value = False
         self.stop()
         await interaction.response.edit_message(
-            content="❌ Você optou por não entrar na fila.", view=None)
+            content="❌ Você optou por não entrar na fila.", view=None
+        )
 
 
 class QueueThreadView(discord.ui.View):
@@ -196,7 +201,8 @@ class QueueThreadView(discord.ui.View):
         button = discord.ui.Button(
             label="🚶 Sair da Fila",
             style=discord.ButtonStyle.red,
-            custom_id=f"sairfila_btn_{recurso}_{usuario_id}")
+            custom_id=f"sairfila_btn_{recurso}_{usuario_id}",
+        )
         button.callback = self.sair_fila_button
         self.add_item(button)
 
@@ -215,9 +221,7 @@ class QueueThreadView(discord.ui.View):
         try:
             fila_atual = list(filas[self.recurso]._queue)
             if usuario_interacao.id in fila_atual:
-                nova_fila = [
-                    uid for uid in fila_atual if uid != usuario_interacao.id
-                ]
+                nova_fila = [uid for uid in fila_atual if uid != usuario_interacao.id]
                 filas[self.recurso] = asyncio.Queue()
                 for uid in nova_fila:
                     await filas[self.recurso].put(uid)
@@ -225,8 +229,7 @@ class QueueThreadView(discord.ui.View):
                 await logar(
                     f"{usuario_interacao.mention} saiu da fila para **{self.recurso}** via botão na thread."
                 )
-                await deletar_canal_fila_temporario(usuario_interacao,
-                                                    self.recurso)
+                await deletar_canal_fila_temporario(usuario_interacao, self.recurso)
                 await atualizar_status()
                 msg = await interaction.followup.send(
                     f"❌ Você saiu da fila para **{self.recurso}**.",
@@ -270,16 +273,18 @@ class MenuConexao(discord.ui.View):
                 resource_emoji = "💻"
 
             options.append(
-                discord.SelectOption(label=nome,
-                                     description="Clique para conectar",
-                                     emoji=resource_emoji))
+                discord.SelectOption(
+                    label=nome, description="Clique para conectar", emoji=resource_emoji
+                )
+            )
 
         # Criamos o select e amarramos o callback corretamente
         select = discord.ui.Select(
             placeholder="Selecione o servidor para se conectar",
             min_values=1,
             max_values=1,
-            options=options)
+            options=options,
+        )
 
         async def on_select(interaction: discord.Interaction):
             await self.select_callback(interaction, select)
@@ -287,18 +292,17 @@ class MenuConexao(discord.ui.View):
         select.callback = on_select
         self.add_item(select)
 
-    async def select_callback(self, interaction: discord.Interaction,
-                              select: discord.ui.Select):
+    async def select_callback(
+        self, interaction: discord.Interaction, select: discord.ui.Select
+    ):
         try:
             await interaction.response.defer(ephemeral=True, thinking=True)
             recurso = select.values[0]
             usuario_interacao = interaction.user
 
             if recursos[recurso] is None:
-                recursos[
-                    recurso] = usuario_interacao.id  # <-- armazenar ID sempre
-                await logar(
-                    f"{usuario_interacao.mention} conectou ao **{recurso}**")
+                recursos[recurso] = usuario_interacao.id  # <-- armazenar ID sempre
+                await logar(f"{usuario_interacao.mention} conectou ao **{recurso}**")
                 iniciar_timer(recurso)
                 await criar_canal_temporario(usuario_interacao, recurso)
                 msg = await interaction.followup.send(
@@ -308,9 +312,7 @@ class MenuConexao(discord.ui.View):
                 await asyncio.sleep(5)
                 await msg.delete()
             elif recursos[recurso] == usuario_interacao.id:
-                await logar(
-                    f"{usuario_interacao.mention} desconectou do **{recurso}**"
-                )
+                await logar(f"{usuario_interacao.mention} desconectou do **{recurso}**")
                 recursos[recurso] = None
                 cancelar_timer(recurso)
                 await deletar_canal_temporario(usuario_interacao, recurso)
@@ -358,13 +360,15 @@ class MenuConexao(discord.ui.View):
 
                 if view.value is True:
                     await filas[recurso].put(usuario_interacao.id)
-                    posicao_na_fila = list(filas[recurso]._queue).index(
-                        usuario_interacao.id) + 1
+                    posicao_na_fila = (
+                        list(filas[recurso]._queue).index(usuario_interacao.id) + 1
+                    )
                     await logar(
                         f"{usuario_interacao.mention} entrou na fila para **{recurso}**. Posição: {posicao_na_fila}"
                     )
-                    await criar_canal_fila_temporario(usuario_interacao,
-                                                      recurso, posicao_na_fila)
+                    await criar_canal_fila_temporario(
+                        usuario_interacao, recurso, posicao_na_fila
+                    )
                     msg = await interaction.followup.send(
                         f"✅ Você entrou na fila para **{recurso}**. Verifique seu canal temporário de fila.",
                         ephemeral=True,
@@ -392,7 +396,8 @@ class MenuConexao(discord.ui.View):
             print(f"❌ Erro no select_callback para {interaction.user.name}:")
             try:
                 msg = await interaction.followup.send(
-                    "❌ Ocorreu um erro. Tente novamente.", ephemeral=True)
+                    "❌ Ocorreu um erro. Tente novamente.", ephemeral=True
+                )
                 await asyncio.sleep(5)
                 await msg.delete()
 
@@ -405,8 +410,7 @@ async def atualizar_status():
     try:
         canal = bot.get_channel(CANAL_ID_HOSPEDAGEM)
         if not canal:
-            print(
-                f"❌ Canal de hospedagem não encontrado: {CANAL_ID_HOSPEDAGEM}")
+            print(f"❌ Canal de hospedagem não encontrado: {CANAL_ID_HOSPEDAGEM}")
             return
 
         msg_id = await buscar_msg_fixa(canal)
@@ -474,8 +478,7 @@ async def logar(mensagem):
     try:
         canal = bot.get_channel(CANAL_ID_LOGS)
         if canal:
-            await canal.send(
-                f"[{datetime.now().strftime('%H:%M:%S')}] {mensagem}")
+            await canal.send(f"[{datetime.now().strftime('%H:%M:%S')}] {mensagem}")
         else:
             print(f"❌ Canal de logs não encontrado: {CANAL_ID_LOGS}")
             print(f"[{datetime.now().strftime('%H:%M:%S')}] {mensagem}")
@@ -516,8 +519,7 @@ async def criar_canal_temporario(usuario: discord.User, recurso: str):
     try:
         canal_hospedagem = bot.get_channel(CANAL_ID_HOSPEDAGEM)
         if not canal_hospedagem:
-            print(
-                f"❌ Canal de hospedagem não encontrado: {CANAL_ID_HOSPEDAGEM}")
+            print(f"❌ Canal de hospedagem não encontrado: {CANAL_ID_HOSPEDAGEM}")
             return
 
         nome_thread = f"🔌 {usuario.display_name} - {recurso}"
@@ -525,22 +527,23 @@ async def criar_canal_temporario(usuario: discord.User, recurso: str):
         thread = await canal_hospedagem.create_thread(
             name=nome_thread,
             type=discord.ChannelType.private_thread,
-            reason=f"Conexão temporária de {usuario.display_name} ao {recurso}"
+            reason=f"Conexão temporária de {usuario.display_name} ao {recurso}",
         )
         await thread.add_user(usuario)
         canais_temporarios[(usuario.id, recurso)] = thread.id
         embed = discord.Embed(
             title="🔌 Conexão Ativa",
             description=f"Você está conectado ao **{recurso}**",
-            color=discord.Color.green())
-        embed.add_field(name="⏱️ Tempo Limite",
-                        value="4 horas (desconexão automática)",
-                        inline=False)
+            color=discord.Color.green(),
+        )
+        embed.add_field(
+            name="⏱️ Tempo Limite", value="4 horas (desconexão automática)", inline=False
+        )
         embed.add_field(
             name="📝 Como Desconectar",
-            value=
-            "• Clique no botão 🔌 Desconectar abaixo\n• Use o comando `/encerraruso`",
-            inline=False)
+            value="• Clique no botão 🔌 Desconectar abaixo\n• Use o comando `/encerraruso`",
+            inline=False,
+        )
 
         view = BotaoDesconectar(recurso)
         await thread.send(f"Olá {usuario.mention}!", embed=embed, view=view)
@@ -553,7 +556,7 @@ async def criar_canal_temporario(usuario: discord.User, recurso: str):
 
 async def deletar_canal_temporario(usuario: "discord.User|int", recurso: str):
     """Deleta a thread privada associada ao usuário e recurso (conexão ativa).
-     Aceita discord.User/Member OU ID (int)."""
+    Aceita discord.User/Member OU ID (int)."""
     try:
         usuario_id = get_user_id(usuario)
         chave_canal = (usuario_id, recurso)
@@ -563,16 +566,11 @@ async def deletar_canal_temporario(usuario: "discord.User|int", recurso: str):
             if thread and isinstance(thread, discord.Thread):
                 try:
                     await thread.delete()
-                    print(
-                        f"✅ Thread temporária de conexão deletada: {thread.name}"
-                    )
+                    print(f"✅ Thread temporária de conexão deletada: {thread.name}")
                 except discord.Forbidden:
-                    print(
-                        f"❌ Sem permissão para deletar thread: {thread.name}")
+                    print(f"❌ Sem permissão para deletar thread: {thread.name}")
                 except Exception as delete_error:
-                    print(
-                        f"❌ Erro ao deletar thread {thread.name}: {delete_error}"
-                    )
+                    print(f"❌ Erro ao deletar thread {thread.name}: {delete_error}")
             del canais_temporarios[chave_canal]
     except Exception as e:
         # tentar extrair .name apenas se for um objeto
@@ -582,14 +580,14 @@ async def deletar_canal_temporario(usuario: "discord.User|int", recurso: str):
         )
 
 
-async def criar_canal_fila_temporario(usuario: discord.User, recurso: str,
-                                      posicao: int):
+async def criar_canal_fila_temporario(
+    usuario: discord.User, recurso: str, posicao: int
+):
     """Cria uma thread privada para o usuário na fila."""
     try:
         canal_hospedagem = bot.get_channel(CANAL_ID_HOSPEDAGEM)
         if not canal_hospedagem:
-            print(
-                f"❌ Canal de hospedagem não encontrado: {CANAL_ID_HOSPEDAGEM}")
+            print(f"❌ Canal de hospedagem não encontrado: {CANAL_ID_HOSPEDAGEM}")
             return
 
         nome_thread = f"⏳ {usuario.display_name} - Fila {recurso}"
@@ -597,26 +595,28 @@ async def criar_canal_fila_temporario(usuario: discord.User, recurso: str,
         thread = await canal_hospedagem.create_thread(
             name=nome_thread,
             type=discord.ChannelType.private_thread,
-            reason=f"Fila para {recurso} de {usuario.display_name}")
+            reason=f"Fila para {recurso} de {usuario.display_name}",
+        )
         await thread.add_user(usuario)
         canais_fila_temporarios[(usuario.id, recurso)] = thread.id
         embed = discord.Embed(
             title="⏳ Você está na Fila!",
             description=f"Você entrou na fila para o recurso **{recurso}**.",
-            color=discord.Color.orange())
-        embed.add_field(name="Sua Posição na Fila",
-                        value=f"**#{posicao}**",
-                        inline=False)
+            color=discord.Color.orange(),
+        )
+        embed.add_field(
+            name="Sua Posição na Fila", value=f"**#{posicao}**", inline=False
+        )
         embed.add_field(
             name="Aguarde",
-            value=
-            "Você será notificado automaticamente aqui quando for a sua vez de usar o recurso.",
-            inline=False)
+            value="Você será notificado automaticamente aqui quando for a sua vez de usar o recurso.",
+            inline=False,
+        )
         embed.add_field(
             name="Sair da Fila",
-            value=
-            "Se não quiser mais esperar, clique no botão abaixo ou use `/sairfila`.",
-            inline=False)
+            value="Se não quiser mais esperar, clique no botão abaixo ou use `/sairfila`.",
+            inline=False,
+        )
 
         view = QueueThreadView(recurso, usuario.id)
         await thread.send(f"Olá {usuario.mention}!", embed=embed, view=view)
@@ -627,10 +627,9 @@ async def criar_canal_fila_temporario(usuario: discord.User, recurso: str,
         )
 
 
-async def deletar_canal_fila_temporario(usuario: "discord.User|int",
-                                        recurso: str):
+async def deletar_canal_fila_temporario(usuario: "discord.User|int", recurso: str):
     """Deleta a thread privada associada ao usuário e recurso (fila).
-     Aceita discord.User/Member OU ID (int)."""
+    Aceita discord.User/Member OU ID (int)."""
     try:
         usuario_id = get_user_id(usuario)
         chave_canal = (usuario_id, recurso)
@@ -640,15 +639,11 @@ async def deletar_canal_fila_temporario(usuario: "discord.User|int",
             if thread and isinstance(thread, discord.Thread):
                 try:
                     await thread.delete()
-                    print(
-                        f"✅ Thread temporária de fila deletada: {thread.name}")
+                    print(f"✅ Thread temporária de fila deletada: {thread.name}")
                 except discord.Forbidden:
-                    print(
-                        f"❌ Sem permissão para deletar thread: {thread.name}")
+                    print(f"❌ Sem permissão para deletar thread: {thread.name}")
                 except Exception as delete_error:
-                    print(
-                        f"❌ Erro ao deletar thread {thread.name}: {delete_error}"
-                    )
+                    print(f"❌ Erro ao deletar thread {thread.name}: {delete_error}")
             del canais_fila_temporarios[chave_canal]
     except Exception as e:
         uname = getattr(usuario, "name", str(usuario))
@@ -670,10 +665,8 @@ async def verificar_fila(recurso: str):
                     recursos[recurso] = proximo_usuario.id  # <-- armazenar ID
                     iniciar_timer(recurso)
                     await criar_canal_temporario(proximo_usuario, recurso)
-                    await deletar_canal_fila_temporario(
-                        proximo_usuario_id, recurso)
-                    thread_id = canais_temporarios.get(
-                        (proximo_usuario.id, recurso))
+                    await deletar_canal_fila_temporario(proximo_usuario_id, recurso)
+                    thread_id = canais_temporarios.get((proximo_usuario.id, recurso))
                     if thread_id:
                         thread = bot.get_channel(thread_id)
                         if thread:
@@ -720,7 +713,7 @@ async def verificar_fila(recurso: str):
             )
             try:
                 # mandar DM apenas se for possível (fetch já foi feito)
-                if 'proximo_usuario' in locals() and proximo_usuario:
+                if "proximo_usuario" in locals() and proximo_usuario:
                     await proximo_usuario.send(
                         f"❌ Ocorreu um erro ao tentar conectar você automaticamente ao recurso **{recurso}**. "
                         "Por favor, tente se conectar manualmente ou entre em contato com um administrador."
@@ -736,8 +729,9 @@ async def verificar_fila(recurso: str):
 async def iniciaruso(interaction: discord.Interaction, recurso: str):
     """Conecta o usuário a um recurso específico."""
     if recurso not in recursos:
-        await interaction.response.send_message("❌ Esse recurso não existe.",
-                                                ephemeral=True)
+        await interaction.response.send_message(
+            "❌ Esse recurso não existe.", ephemeral=True
+        )
         return
 
     if recursos[recurso] is not None:
@@ -748,37 +742,41 @@ async def iniciaruso(interaction: discord.Interaction, recurso: str):
         if interaction.user.id in fila_atual:
             await interaction.response.send_message(
                 f"Você já está na fila para **{recurso}**. Sua posição: {fila_atual.index(interaction.user.id) + 1}.",
-                ephemeral=True)
+                ephemeral=True,
+            )
             return
 
         view = ConfirmarFilaView(recurso, interaction.user.id)
         await interaction.response.send_message(
             f"🚫 O **{recurso}** já está em uso por {ocupante_mention}. Deseja entrar na fila?",
             view=view,
-            ephemeral=True)
+            ephemeral=True,
+        )
 
         await view.wait()
 
         if view.value is True:
             await filas[recurso].put(interaction.user.id)
-            posicao_na_fila = list(filas[recurso]._queue).index(
-                interaction.user.id) + 1
+            posicao_na_fila = list(filas[recurso]._queue).index(interaction.user.id) + 1
             await logar(
                 f"{interaction.user.mention} entrou na fila para **{recurso}**. Posição: {posicao_na_fila}"
             )
-            await criar_canal_fila_temporario(interaction.user, recurso,
-                                              posicao_na_fila)
+            await criar_canal_fila_temporario(
+                interaction.user, recurso, posicao_na_fila
+            )
             await interaction.followup.send(
                 f"✅ Você entrou na fila para **{recurso}**. Verifique seu canal temporário de fila.",
-                ephemeral=True)
+                ephemeral=True,
+            )
         elif view.value is False:
             await interaction.followup.send(
-                f"Você optou por não entrar na fila para **{recurso}**.",
-                ephemeral=True)
+                f"Você optou por não entrar na fila para **{recurso}**.", ephemeral=True
+            )
         else:
             await interaction.followup.send(
                 f"Tempo esgotado. Você não entrou na fila para **{recurso}**.",
-                ephemeral=True)
+                ephemeral=True,
+            )
 
         await atualizar_status()
         return
@@ -786,7 +784,8 @@ async def iniciaruso(interaction: discord.Interaction, recurso: str):
     recursos[recurso] = interaction.user.id  # <-- armazenar ID
     iniciar_timer(recurso)
     await interaction.response.send_message(
-        f"🔌 Você iniciou o uso de **{recurso}**.", ephemeral=True)
+        f"🔌 Você iniciou o uso de **{recurso}**.", ephemeral=True
+    )
     await logar(
         f"{interaction.user.mention} iniciou o uso de **{recurso}** via comando."
     )
@@ -799,18 +798,21 @@ async def iniciaruso(interaction: discord.Interaction, recurso: str):
 async def encerraruso(interaction: discord.Interaction, recurso: str):
     """Encerra o uso de um recurso específico."""
     if recurso not in recursos:
-        await interaction.response.send_message("❌ Esse recurso não existe.",
-                                                ephemeral=True)
+        await interaction.response.send_message(
+            "❌ Esse recurso não existe.", ephemeral=True
+        )
         return
     if recursos[recurso] != interaction.user.id:
         await interaction.response.send_message(
-            "🚫 Você não está usando esse recurso.", ephemeral=True)
+            "🚫 Você não está usando esse recurso.", ephemeral=True
+        )
         return
     recursos[recurso] = None
     cancelar_timer(recurso)
     await deletar_canal_temporario(interaction.user, recurso)
     await interaction.response.send_message(
-        f"❌ Você encerrou o uso de **{recurso}**.", ephemeral=True)
+        f"❌ Você encerrou o uso de **{recurso}**.", ephemeral=True
+    )
     await logar(
         f"{interaction.user.mention} encerrou o uso de **{recurso}** via comando."
     )
@@ -823,33 +825,36 @@ async def encerraruso(interaction: discord.Interaction, recurso: str):
 async def entrarfila(interaction: discord.Interaction, recurso: str):
     """Permite ao usuário entrar na fila de um recurso."""
     if recurso not in recursos:
-        await interaction.response.send_message("❌ Esse recurso não existe.",
-                                                ephemeral=True)
+        await interaction.response.send_message(
+            "❌ Esse recurso não existe.", ephemeral=True
+        )
         return
     if recursos[recurso] == interaction.user.id:
         await interaction.response.send_message(
-            f"Você já está conectado a **{recurso}**.", ephemeral=True)
+            f"Você já está conectado a **{recurso}**.", ephemeral=True
+        )
         return
     fila_atual = list(filas[recurso]._queue)
     if interaction.user.id in fila_atual:
         await interaction.response.send_message(
             f"Você já está na fila para **{recurso}**. Sua posição: {fila_atual.index(interaction.user.id) + 1}.",
-            ephemeral=True)
+            ephemeral=True,
+        )
         return
     await filas[recurso].put(interaction.user.id)
-    posicao_na_fila = list(filas[recurso]._queue).index(
-        interaction.user.id) + 1
+    posicao_na_fila = list(filas[recurso]._queue).index(interaction.user.id) + 1
     await interaction.response.send_message(
         f"✅ Você entrou na fila para **{recurso}**. Sua posição atual: {posicao_na_fila}.",
-        ephemeral=True)
+        ephemeral=True,
+    )
     await logar(
         f"{interaction.user.mention} entrou na fila para **{recurso}** via comando. Posição: {posicao_na_fila}"
     )
-    await criar_canal_fila_temporario(interaction.user, recurso,
-                                      posicao_na_fila)
+    await criar_canal_fila_temporario(interaction.user, recurso, posicao_na_fila)
     await interaction.followup.send(
         f"✅ Você entrou na fila para **{recurso}**. Verifique seu canal temporário de fila.",
-        ephemeral=True)
+        ephemeral=True,
+    )
     await atualizar_status()
 
 
@@ -858,20 +863,23 @@ async def entrarfila(interaction: discord.Interaction, recurso: str):
 async def sairfila(interaction: discord.Interaction, recurso: str):
     """Permite ao usuário sair da fila de um recurso."""
     if recurso not in recursos:
-        await interaction.response.send_message("❌ Esse recurso não existe.",
-                                                ephemeral=True)
+        await interaction.response.send_message(
+            "❌ Esse recurso não existe.", ephemeral=True
+        )
         return
     fila_atual = list(filas[recurso]._queue)
     if interaction.user.id not in fila_atual:
         await interaction.response.send_message(
-            f"Você não está na fila para **{recurso}**.", ephemeral=True)
+            f"Você não está na fila para **{recurso}**.", ephemeral=True
+        )
         return
     nova_fila = [uid for uid in fila_atual if uid != interaction.user.id]
     filas[recurso] = asyncio.Queue()
     for uid in nova_fila:
         await filas[recurso].put(uid)
     await interaction.response.send_message(
-        f"❌ Você saiu da fila para **{recurso}**.", ephemeral=True)
+        f"❌ Você saiu da fila para **{recurso}**.", ephemeral=True
+    )
     await logar(
         f"{interaction.user.mention} saiu da fila para **{recurso}** via comando."
     )
@@ -884,8 +892,9 @@ async def sairfila(interaction: discord.Interaction, recurso: str):
 async def verfila(interaction: discord.Interaction, recurso: str = None):
     """Exibe a fila de espera para um ou todos os recursos."""
     if recurso and recurso not in recursos:
-        await interaction.response.send_message("❌ Esse recurso não existe.",
-                                                ephemeral=True)
+        await interaction.response.send_message(
+            "❌ Esse recurso não existe.", ephemeral=True
+        )
         return
     response_content = "**📊 Filas de Espera:**\n\n"
     recursos_para_verificar = [recurso] if recurso else recursos.keys()
@@ -898,11 +907,15 @@ async def verfila(interaction: discord.Interaction, recurso: str = None):
             for i, user_id in enumerate(fila_atual):
                 try:
                     user = await bot.fetch_user(user_id)
-                    response_content += f"  {i+1}. {user.display_name}\n"
+                    response_content += f"  {i + 1}. {user.display_name}\n"
                 except discord.NotFound:
-                    response_content += f"  {i+1}. Usuário desconhecido (ID: {user_id})\n"
+                    response_content += (
+                        f"  {i + 1}. Usuário desconhecido (ID: {user_id})\n"
+                    )
                 except Exception as e:
-                    response_content += f"  {i+1}. Erro ao buscar usuário (ID: {user_id}): {e}\n"
+                    response_content += (
+                        f"  {i + 1}. Erro ao buscar usuário (ID: {user_id}): {e}\n"
+                    )
         response_content += "\n"
     await interaction.response.send_message(response_content, ephemeral=True)
 
@@ -924,16 +937,16 @@ async def on_ready():
 from flask import Flask
 from threading import Thread
 
-app = Flask('')
+app = Flask("")
 
 
-@app.route('/')
+@app.route("/")
 def home():
     return "Bot online!"
 
 
 def run():
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host="0.0.0.0", port=8080)
 
 
 def manter_online():
