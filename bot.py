@@ -305,6 +305,7 @@ class MenuConexao(discord.ui.View):
                 await logar(f"{usuario_interacao.mention} conectou ao **{recurso}**")
                 iniciar_timer(recurso)
                 await criar_canal_temporario(usuario_interacao, recurso)
+                await atualizar_status()
                 msg = await interaction.followup.send(
                     "❌ CAT-T: Não foi possível estabelecer comunicação, por favor acione o suporte para verificar se a Licença Pro está ativa. Você está usando o plano gratuito, o tempo de conexão será reduzido",
                     ephemeral=True,
